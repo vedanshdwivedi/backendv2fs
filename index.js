@@ -38,5 +38,5 @@ const PORT = 3000;
 app.listen(PORT, () => {
   connect();
   trackMixPanelEvent("Backend-Start", { url: "/" });
-  logger.info("Listening on PORT : ", PORT);
+  logger.info(`Listening on PORT : ${PORT}`);
 });
