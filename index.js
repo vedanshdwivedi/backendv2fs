@@ -6,6 +6,7 @@ const cors = require("cors");
 const { trackMixPanelEvent } = require("./segment");
 const { logger } = require("./logger");
 const { authRouter } = require("./routes/auth");
+const { projectRouter } = require("./routes/project");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/project", projectRouter);
 
 app.get("/", (req, res) => {
   res.send("App Started");
@@ -27,6 +29,6 @@ app.get("/", (req, res) => {
 const PORT = 5500;
 app.listen(PORT, () => {
   // connect();
-  trackMixPanelEvent("Backend-Start", { url: "/" });
+  // trackMixPanelEvent("Backend-Start", { url: "/" });
   logger.info(`Listening on PORT : ${PORT}`);
 });

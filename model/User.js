@@ -38,12 +38,12 @@ const User = sequelize.define("users", {
     defaultValue: false,
   },
   createdAt: {
-    type: DataTypes.TIME,
-    defaultValue: Date.now(),
+    type: DataTypes.DATE,
+    defaultValue: new Date(),
   },
   updatedAt: {
-    type: DataTypes.TIME,
-    defaultValue: Date.now(),
+    type: DataTypes.DATE,
+    defaultValue: new Date(),
   },
   role: {
     type: DataTypes.STRING,
