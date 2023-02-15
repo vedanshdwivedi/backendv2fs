@@ -9,6 +9,8 @@ const { getAllProjectByUserId, getProjectById } = require("../model/Project");
 const { createProjectService } = require("../service/project");
 const moment = require("moment");
 const e = require("express");
+const { trackMixPanelEvent } = require("../segment");
+const { getCurrentTimeStamp } = require("../utility/datetime");
 
 const generateContainerName = ({ createdAt, email, username, uid }) => {
   const containerName = encodeObjectToUniqueString({
@@ -21,7 +23,7 @@ const generateContainerName = ({ createdAt, email, username, uid }) => {
 };
 
 const createProject = async (req, res) => {
-  const createdAt = moment().format("YYYY-MM-DD HH:mm:ss");
+  const createdAt = getCurrentTimeStamp();
   const email = req.user.email;
   const username = req.user.username;
   const uid = req.user.id;
@@ -70,6 +72,11 @@ const createProject = async (req, res) => {
         message: "Project Created Successfully",
         data: createdProject,
       });
+      trackMixPanelEvent(
+        "project-created",
+        { algorithm: reqData.algorithm, userId: uid },
+        username
+      );
     } catch (error) {
       logger.error(
         `[projectController][createProject] Unable to upload file to Blob : ${error.message}`
@@ -81,7 +88,7 @@ const createProject = async (req, res) => {
 
 const getProjectsByUserId = async (req, res) => {
   try {
-    const projects = await getAllProjectByUserId(req.user.uid);
+    const projects = await getAllProjectByUserId(req.user.id);
     res.status(200).send({ message: "", data: projects });
   } catch (error) {
     logger.error(

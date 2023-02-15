@@ -1,6 +1,7 @@
 const { sequelize } = require("../database/postgres");
 const { DataTypes } = require("sequelize");
 const Joi = require("joi");
+const { getCurrentTimeStamp } = require("../utility/datetime");
 
 const File = sequelize.define(
   "files",
@@ -28,7 +29,7 @@ const File = sequelize.define(
     },
     createdAt: {
       type: DataTypes.DATE,
-      defaultValue: new Date(),
+      defaultValue: getCurrentTimeStamp(),
     },
     category: {
       type: DataTypes.STRING,

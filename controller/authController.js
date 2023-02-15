@@ -2,6 +2,7 @@ const { User, validateUser, generateAuthToken } = require("../model/User");
 const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const { trackMixPanelEvent } = require("../segment");
+const { getCurrentTimeStamp } = require("../utility/datetime");
 
 const createUniqueUsername = async (email) => {
   let tryCount = -1;
@@ -45,8 +46,8 @@ const registerUser = async (req, res) => {
       password: hashPassword,
       username: username,
       role: "USER",
-      createdAt: new Date().toLocaleString("en-US", { timezone: "UTC" }),
-      updatedAt: new Date().toLocaleString("en-US", { timezone: "UTC" }),
+      createdAt: getCurrentTimeStamp(),
+      updatedAt: getCurrentTimeStamp(),
     }).save();
     trackMixPanelEvent(
       "new-user-created",
@@ -88,7 +89,14 @@ const loginUser = async (req, res) => {
     }
 
     const token = generateAuthToken(user);
-    res.status(200).send({ data: token, message: "Logged in Successfully" });
+    res
+      .status(200)
+      .send({
+        data: token,
+        message: "Logged in Successfully",
+        userId: Number(user.uid),
+        role: user.role,
+      });
   } catch (error) {
     res.status(500).send({ message: error.message });
   }

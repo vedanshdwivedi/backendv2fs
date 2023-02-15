@@ -1,6 +1,7 @@
 const { sequelize } = require("../database/postgres");
 const { DataTypes } = require("sequelize");
 const User = require("./User");
+const { getCurrentTimeStamp } = require("../utility/datetime");
 
 const Agent = sequelize.define("agents", {
   aid: {
@@ -40,12 +41,12 @@ const Agent = sequelize.define("agents", {
     defaultValue: false,
   },
   createdAt: {
-    type: DataTypes.TIME,
-    defaultValue: Date.now(),
+    type: DataTypes.DATE,
+    defaultValue: getCurrentTimeStamp(),
   },
   updatedAt: {
-    type: DataTypes.TIME,
-    defaultValue: Date.now(),
+    type: DataTypes.DATE,
+    defaultValue: getCurrentTimeStamp(),
   },
   role: {
     type: DataTypes.STRING,

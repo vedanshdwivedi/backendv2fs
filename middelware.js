@@ -12,13 +12,12 @@ const validateJWT = (req, res, next) => {
   } catch (error) {
     trackMixPanelEvent("Unauthorised-API-Access", {
       url: req.originalUrl,
-      token: token,
+      token: req.header("Authorization").replace("Bearer ", ""),
       error: error.message,
     });
     return res.status(401).json({ message: "Unauthorised" });
   }
 };
-
 
 module.exports = {
   validateJWT,

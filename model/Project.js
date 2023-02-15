@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const joi = require("joi");
 const Joi = require("joi");
+const { getCurrentTimeStamp } = require("../utility/datetime");
 
 const Project = sequelize.define("projects", {
   pid: {
@@ -37,11 +38,11 @@ const Project = sequelize.define("projects", {
   },
   createdAt: {
     type: DataTypes.DATE,
-    defaultValue: new Date(),
+    defaultValue: getCurrentTimeStamp(),
   },
   updatedAt: {
     type: DataTypes.DATE,
-    defaultValue: new Date(),
+    defaultValue: getCurrentTimeStamp(),
   },
   email: {
     type: DataTypes.STRING,
@@ -92,7 +93,10 @@ const createProjectEntry = async (data) => {
 };
 
 const getAllProjectByUserId = async (userId) => {
-  return await Project.findAll({ uid: userId, deleted: false });
+  return await Project.findAll({
+    where: { uid: userId, deleted: false },
+    order: [["createdAt", "DESC"]],
+  });
 };
 
 const getProjectById = async (projectId) => {
