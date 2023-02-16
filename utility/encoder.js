@@ -12,6 +12,20 @@ const encodeObjectToUniqueString = (data) => {
   return encoded;
 };
 
+const encrypt = (data) => {
+  let buff = new Buffer(data);
+  let base64data = buff.toString("base64");
+  return base64data;
+};
+
+const decrypt = (data) => {
+  let buff = new Buffer(data, "base64");
+  let text = buff.toString("utf-8");
+  return text;
+};
+
 module.exports = {
   encodeObjectToUniqueString,
+  encrypt,
+  decrypt,
 };

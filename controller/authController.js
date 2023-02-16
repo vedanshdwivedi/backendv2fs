@@ -3,6 +3,9 @@ const bcrypt = require("bcrypt");
 const Joi = require("joi");
 const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
+const { Tokens } = require("../schema/tokens");
+const { createTokenEntry } = require("../model/tokens");
+const { logger } = require("../logger");
 
 const createUniqueUsername = async (email) => {
   let tryCount = -1;
@@ -88,21 +91,35 @@ const loginUser = async (req, res) => {
       return res.status(401).send({ message: "Invalid email/password" });
     }
 
+    await Tokens.findOneAndDelete({ userId: user.uid });
     const token = generateAuthToken(user);
-    res
-      .status(200)
-      .send({
-        data: token,
-        message: "Logged in Successfully",
-        userId: Number(user.uid),
-        role: user.role,
-      });
+    await createTokenEntry({ userId: user.uid, token });
+    res.status(200).send({
+      data: token,
+      message: "Logged in Successfully",
+      userId: Number(user.uid),
+      role: user.role,
+    });
   } catch (error) {
     res.status(500).send({ message: error.message });
+  }
+};
+
+const logoutUser = async (req, res) => {
+  try {
+    const userId = Number(req.user.uid);
+    await Tokens.findOneAndDelete({ userId });
+    res.status(200).send({ message: "User Logged Out" });
+  } catch (error) {
+    logger.error(
+      `[authController][logoutUser] Error in Logging out user ${error}`
+    );
+    res.status(500).send({ message: "Error Occurred" });
   }
 };
 
 module.exports = {
   registerUser,
   loginUser,
+  logoutUser,
 };
