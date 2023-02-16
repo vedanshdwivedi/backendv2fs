@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const { trackMixPanelEvent } = require("./segment");
 const { getTokenEntry } = require("./model/tokens");
 const { user } = require("pg/lib/defaults");
+const { TokenCredential } = require("azure-storage");
+const { Tokens } = require("./schema/tokens");
 
 const validateJWT = async (req, res, next) => {
   try {
@@ -12,11 +14,13 @@ const validateJWT = async (req, res, next) => {
     const storedToken = await getTokenEntry({ userId: Number(decoded.id) });
 
     if (storedToken.token !== token) {
+      await Tokens.findOneAndDelete({ user: Number(decoded.id) });
       trackMixPanelEvent("Token-Mismatch", {
         url: req.originalUrl,
         error: error.message,
         user: user.id,
       });
+      throw new Error("Unauthorised");
     }
 
     next();

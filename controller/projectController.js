@@ -4,8 +4,16 @@ const { blobService } = require("../database/azureBlob");
 const { logger } = require("../logger");
 const { encodeObjectToUniqueString } = require("../utility/encoder");
 const { createAckLogs } = require("../model/ackLogs");
-const { createFileEntry, getAllFilesByProjectId } = require("../model/File");
-const { getAllProjectByUserId, getProjectById } = require("../model/Project");
+const {
+  createFileEntry,
+  getAllFilesByProjectId,
+  markFilesDeleted,
+} = require("../model/File");
+const {
+  getAllProjectByUserId,
+  getProjectById,
+  Project,
+} = require("../model/Project");
 const { createProjectService } = require("../service/project");
 const moment = require("moment");
 const e = require("express");
@@ -132,9 +140,28 @@ const getAllFiles = async (req, res) => {
   }
 };
 
+const deleteProject = async (req, res) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    let project = await getProjectById(projectId);
+    project.deleted = true;
+    project.save();
+    await markFilesDeleted(projectId);
+    res.status(200).send({ message: "Project Deleted" });
+  } catch (error) {
+    logger.error(
+      `[projectController][deleteProject] Project has been deleted : ${JSON.stringify(
+        error
+      )}`
+    );
+    res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   createProject,
   getProjectsByUserId,
   getAllFiles,
   getProject,
+  deleteProject,
 };

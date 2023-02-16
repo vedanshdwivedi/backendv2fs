@@ -3,7 +3,7 @@ const { mongoDb } = require("../database/mongo");
 
 const tokenSchema = new mongoose.Schema(
   {
-    userId: String,
+    userId: Number,
     token: String
   },
   { timestamps: true }

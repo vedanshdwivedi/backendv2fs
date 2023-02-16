@@ -91,14 +91,15 @@ const loginUser = async (req, res) => {
       return res.status(401).send({ message: "Invalid email/password" });
     }
 
-    await Tokens.findOneAndDelete({ userId: user.uid });
+    await Tokens.findOneAndDelete({ userId: Number(user.uid) });
     const token = generateAuthToken(user);
-    await createTokenEntry({ userId: user.uid, token });
+    await createTokenEntry({ userId: Number(user.uid), token });
     res.status(200).send({
       data: token,
       message: "Logged in Successfully",
       userId: Number(user.uid),
       role: user.role,
+      email: user.email,
     });
   } catch (error) {
     res.status(500).send({ message: error.message });
@@ -107,7 +108,7 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
   try {
-    const userId = Number(req.user.uid);
+    const userId = Number(req.user.id);
     await Tokens.findOneAndDelete({ userId });
     res.status(200).send({ message: "User Logged Out" });
   } catch (error) {

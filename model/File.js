@@ -72,9 +72,19 @@ const getAllFilesByProjectId = async (projectId) => {
   return await File.findAll({ pid: projectId, deleted: false });
 };
 
+const markFilesDeleted = async (projectId) => {
+  return await File.update(
+    {
+      deleted: true,
+    },
+    { where: { pid: projectId } }
+  );
+};
+
 module.exports = {
   validateFile,
   createFileEntry,
   getAllFilesByProjectId,
+  markFilesDeleted,
   File,
 };
