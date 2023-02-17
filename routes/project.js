@@ -12,6 +12,16 @@ projectRouter.delete(
   validateJWT,
   projectController.deleteProject
 );
+projectRouter.get(
+  "/dataset/:projectId",
+  validateJWT,
+  projectController.fetchProjectTrainingDatasetInfo
+);
+projectRouter.get(
+  "/ackLogs/:projectId",
+  validateJWT,
+  projectController.getAckLogs
+);
 
 module.exports = {
   projectRouter,

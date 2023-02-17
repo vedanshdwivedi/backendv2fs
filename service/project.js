@@ -1,4 +1,4 @@
-const { createProjectEntry } = require("../model/Project");
+const projectModel = require("../model/Project");
 
 const createProjectService = async ({
   uid,
@@ -9,7 +9,7 @@ const createProjectService = async ({
   algorithm,
   container,
 }) => {
-  const project = await createProjectEntry({
+  const project = await projectModel.createProjectEntry({
     uid,
     title,
     description,
@@ -22,6 +22,15 @@ const createProjectService = async ({
   return project;
 };
 
+const doesUserOwnsProject = async (projectId, userId) => {
+  const project = await projectModel.getProjectById(projectId);
+  if (!project) {
+    return false;
+  }
+  return Number(project.uid) === Number(userId);
+};
+
 module.exports = {
   createProjectService,
+  doesUserOwnsProject,
 };

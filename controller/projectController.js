@@ -3,18 +3,19 @@ const { handleContainerCreation } = require("../model/BlobModel");
 const { blobService } = require("../database/azureBlob");
 const { logger } = require("../logger");
 const { encodeObjectToUniqueString } = require("../utility/encoder");
-const { createAckLogs } = require("../model/ackLogs");
+const ackLogsModel = require("../model/ackLogs");
 const {
   createFileEntry,
   getAllFilesByProjectId,
   markFilesDeleted,
+  getFileByProjectIdAndCategory,
 } = require("../model/File");
 const {
   getAllProjectByUserId,
   getProjectById,
   Project,
 } = require("../model/Project");
-const { createProjectService } = require("../service/project");
+const projectService = require("../service/project");
 const moment = require("moment");
 const e = require("express");
 const { trackMixPanelEvent } = require("../segment");
@@ -53,7 +54,7 @@ const createProject = async (req, res) => {
       const containerClient = await handleContainerCreation(containerName);
       const blobClient = containerClient.getBlockBlobClient(blobName);
       const blobUploadResponse = blobClient.uploadFile(file.filepath);
-      let createdProject = await createProjectService({
+      let createdProject = await projectService.createProjectService({
         uid,
         title: reqData.project_name,
         description: reqData.description,
@@ -70,7 +71,7 @@ const createProject = async (req, res) => {
         category: "DATASET",
         deleted: false,
       });
-      await createAckLogs({
+      await ackLogsModel.createAckLogs({
         userId: uid,
         projectId: createdProject.pid,
         agentId: null,
@@ -158,10 +159,82 @@ const deleteProject = async (req, res) => {
   }
 };
 
+const fetchProjectTrainingDatasetInfo = async (req, res) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    let project = await getProjectById(projectId);
+    if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
+      logger.info(
+        `[projectController][fetchProjectTrainingDatasetInfo] Unauthorised Project Access Asked`
+      );
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+        },
+        req.user.username
+      );
+      res.status(401).send({ message: "Unauthorised" });
+    }
+    const fileList = await getFileByProjectIdAndCategory(project, "DATASET");
+    if (!fileList || fileList.length === 0) {
+      res.status(401).send({ message: "File Not Found" });
+    }
+    res.status(200).send({ message: "File Found", data: fileList[0] });
+  } catch (error) {
+    logger.info(
+      `[projectController][fetchProjectTrainingDatasetInfo] Error in fetching file details : ${error.message}`
+    );
+    res.status(500).send({ message: error.message });
+  }
+};
+
+const getAckLogs = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const projectOwner = projectService.doesUserOwnsProject(
+      projectId,
+      req.user.id
+    );
+    if (!projectOwner) {
+      logger.info(
+        `[projectController][getAckLogs] User does not have access to this project `
+      );
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      res.status(401).send({ message: "Unauthorised" });
+    }
+
+    const ackLogs = await ackLogsModel.getAckLogs(projectId);
+    if (!ackLogs) {
+      logger.info(`[projectController][getAckLogs] Ack Logs not found `);
+      res.status(200).send({ data: [], message: "Ack Logs not found" });
+    }
+
+    res.status(200).send({ data: ackLogs, message: "" });
+  } catch (error) {
+    res.status(200).send({ message: error.message });
+  }
+};
+
 module.exports = {
   createProject,
   getProjectsByUserId,
   getAllFiles,
   getProject,
   deleteProject,
+  fetchProjectTrainingDatasetInfo,
+  getAckLogs,
 };

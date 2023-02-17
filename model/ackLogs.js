@@ -9,6 +9,11 @@ async function createAckLogs({ userId, projectId, agentId, action }) {
   });
 }
 
+async function getAckLogs(projectId) {
+  return await AckLogs.findAll({ projectId });
+}
+
 module.exports = {
   createAckLogs,
+  getAckLogs,
 };

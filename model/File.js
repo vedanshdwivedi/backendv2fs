@@ -81,10 +81,15 @@ const markFilesDeleted = async (projectId) => {
   );
 };
 
+const getFileByProjectIdAndCategory = async (projectId, category) => {
+  return await File.findAll({ pid: projectId, category: category });
+};
+
 module.exports = {
   validateFile,
   createFileEntry,
   getAllFilesByProjectId,
   markFilesDeleted,
+  getFileByProjectIdAndCategory,
   File,
 };
