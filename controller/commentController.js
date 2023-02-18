@@ -5,6 +5,7 @@ const { trackMixPanelEvent } = require("../segment");
 
 const create = async (req, res) => {
   try {
+    console.log({ ...req.body });
     const error = commentModel.validateData({
       ...req.body,
       role: req.user.role,
@@ -30,25 +31,25 @@ const create = async (req, res) => {
         },
         req.user.username
       );
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
     if (error) {
       logger.error(
         `[commentController][create] Validation Failed : ${error.details[0].message} `
       );
-      res.status(401).send({ message: error.details[0].message });
+      return res.status(401).send({ message: error.details[0].message });
     }
     const comment = await commentModel.create({
       ...req.body,
       role: req.user.role,
       uid: req.user.id,
     });
-    res.status(201).send({ message: "Comment Created", data: comment });
+    return res.status(201).send({ message: "Comment Created", data: comment });
   } catch (error) {
     logger.error(
       `[commentController][create] Failed to create Comment : ${error.message} `
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -74,20 +75,22 @@ const get = async (req, res) => {
         },
         req.user.username
       );
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
     const comments = await commentModel.get(projectId);
     if (!comments || comments.length === 0) {
-      res.status(200).send({ message: "Comments Not Found", data: [] });
+      return res.status(200).send({ message: "Comments Not Found", data: [] });
     }
-    res.status(200).send({ message: "Comments Fetched", data: comments });
+    return res
+      .status(200)
+      .send({ message: "Comments Fetched", data: comments });
   } catch (error) {
     logger.error(
       `[commentController][get] Error in Fetching Comments : ${JSON.stringify(
         error
       )}`
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 

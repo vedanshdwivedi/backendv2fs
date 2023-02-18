@@ -7,6 +7,7 @@ const { trackMixPanelEvent } = require("./segment");
 const { logger } = require("./logger");
 const { authRouter } = require("./routes/auth");
 const { projectRouter } = require("./routes/project");
+const { commentRouter } = require("./routes/comment");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRouter);
 app.use("/api/project", projectRouter);
+app.use("/api/comment/", commentRouter);
 
 app.get("/", (req, res) => {
   res.send("App Started");

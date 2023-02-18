@@ -10,7 +10,7 @@ async function createAckLogs({ userId, projectId, agentId, action }) {
 }
 
 async function getAckLogs(projectId) {
-  return await AckLogs.findAll({ projectId });
+  return await AckLogs.find({ projectId });
 }
 
 module.exports = {

@@ -77,20 +77,20 @@ const createProject = async (req, res) => {
         agentId: null,
         action: `${name} Created Project`,
       });
-      res.status(201).send({
-        message: "Project Created Successfully",
-        data: createdProject,
-      });
       trackMixPanelEvent(
         "project-created",
         { algorithm: reqData.algorithm, userId: uid },
         username
       );
+      return res.status(201).send({
+        message: "Project Created Successfully",
+        data: createdProject,
+      });
     } catch (error) {
       logger.error(
         `[projectController][createProject] Unable to upload file to Blob : ${error.message}`
       );
-      res.status(500).send({ message: error.message });
+      return res.status(500).send({ message: error.message });
     }
   });
 };
@@ -98,12 +98,12 @@ const createProject = async (req, res) => {
 const getProjectsByUserId = async (req, res) => {
   try {
     const projects = await getAllProjectByUserId(req.user.id);
-    res.status(200).send({ message: "", data: projects });
+    return res.status(200).send({ message: "", data: projects });
   } catch (error) {
     logger.error(
       `[projectController][getProjectsByUserId] Unable to fetch projects by userID : ${error.message}`
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -111,12 +111,12 @@ const getProject = async (req, res) => {
   try {
     const project = await getProjectById(req.query.projectId);
     if (!project) {
-      res.status(404).send({ message: "Project Not Found" });
+      return res.status(404).send({ message: "Project Not Found" });
     }
     if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
-    res.status(200).send({ message: "Project Found", data: project });
+    return res.status(200).send({ message: "Project Found", data: project });
   } catch (error) {
     logger.error(`[projectController][getProject] Error : ${error}`);
   }
@@ -126,18 +126,18 @@ const getAllFiles = async (req, res) => {
   try {
     const project = await getProjectById(Number(req.query.projectId));
     if (!project) {
-      res.status(404).send({ message: "Invalid Project ID" });
+      return res.status(404).send({ message: "Invalid Project ID" });
     }
     if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
     const files = await getAllFilesByProjectId(Number(req.query.projectId));
-    res.status(200).send({ message: "", data: files });
+    return res.status(200).send({ message: "", data: files });
   } catch (error) {
     logger.error(
       `[projectController][getAllFilesByProjectId] Unable to fetch projects by userID : ${error.message}`
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -148,14 +148,14 @@ const deleteProject = async (req, res) => {
     project.deleted = true;
     project.save();
     await markFilesDeleted(projectId);
-    res.status(200).send({ message: "Project Deleted" });
+    return res.status(200).send({ message: "Project Deleted" });
   } catch (error) {
     logger.error(
       `[projectController][deleteProject] Project has been deleted : ${JSON.stringify(
         error
       )}`
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -177,18 +177,18 @@ const fetchProjectTrainingDatasetInfo = async (req, res) => {
         },
         req.user.username
       );
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
     const fileList = await getFileByProjectIdAndCategory(project, "DATASET");
     if (!fileList || fileList.length === 0) {
-      res.status(401).send({ message: "File Not Found" });
+      return res.status(401).send({ message: "File Not Found" });
     }
-    res.status(200).send({ message: "File Found", data: fileList[0] });
+    return res.status(200).send({ message: "File Found", data: fileList[0] });
   } catch (error) {
     logger.info(
       `[projectController][fetchProjectTrainingDatasetInfo] Error in fetching file details : ${error.message}`
     );
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -214,18 +214,18 @@ const getAckLogs = async (req, res) => {
         },
         req.user.username
       );
-      res.status(401).send({ message: "Unauthorised" });
+      return res.status(401).send({ message: "Unauthorised" });
     }
 
     const ackLogs = await ackLogsModel.getAckLogs(projectId);
     if (!ackLogs) {
       logger.info(`[projectController][getAckLogs] Ack Logs not found `);
-      res.status(200).send({ data: [], message: "Ack Logs not found" });
+      return res.status(200).send({ data: [], message: "Ack Logs not found" });
     }
 
-    res.status(200).send({ data: ackLogs, message: "" });
+    return res.status(200).send({ data: ackLogs, message: "" });
   } catch (error) {
-    res.status(200).send({ message: error.message });
+    return res.status(200).send({ message: error.message });
   }
 };
 

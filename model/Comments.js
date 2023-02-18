@@ -1,6 +1,7 @@
 const { sequelize } = require("../database/postgres");
 const { DataTypes } = require("sequelize");
 const { logger } = require("../logger");
+const joi = require("joi");
 const Joi = require("joi");
 
 const Comment = sequelize.define(
@@ -9,6 +10,7 @@ const Comment = sequelize.define(
     cid: {
       type: DataTypes.BIGINT,
       primaryKey: true,
+      autoIncrement: true,
     },
     comment: {
       type: DataTypes.STRING,
@@ -49,7 +51,7 @@ const create = async (data) => {
 const get = async (projectId) => {
   return await Comment.findAll({
     where: { pid: projectId },
-    order: ["createdAt", "DESC"],
+    order: [["createdAt", "DESC"]],
   });
 };
 

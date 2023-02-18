@@ -4,8 +4,9 @@ const { logger } = require("../logger");
 const jwt = require("jsonwebtoken");
 const _ = require("lodash");
 const joi = require("joi");
-const passwordComplexity = require("joi-password-complexity");
 const Joi = require("joi");
+const passwordComplexity = require("joi-password-complexity");
+
 
 const User = sequelize.define("users", {
   uid: {

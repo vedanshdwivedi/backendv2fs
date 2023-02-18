@@ -57,9 +57,9 @@ const registerUser = async (req, res) => {
       { email: req.body.email, name: req.body.name, username },
       username
     );
-    res.status(201).send({ message: "User Created Successfully" });
+    return res.status(201).send({ message: "User Created Successfully" });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -94,7 +94,7 @@ const loginUser = async (req, res) => {
     await Tokens.findOneAndDelete({ userId: Number(user.uid) });
     const token = generateAuthToken(user);
     await createTokenEntry({ userId: Number(user.uid), token });
-    res.status(200).send({
+    return res.status(200).send({
       data: token,
       message: "Logged in Successfully",
       userId: Number(user.uid),
@@ -102,7 +102,7 @@ const loginUser = async (req, res) => {
       email: user.email,
     });
   } catch (error) {
-    res.status(500).send({ message: error.message });
+    return res.status(500).send({ message: error.message });
   }
 };
 
@@ -110,12 +110,12 @@ const logoutUser = async (req, res) => {
   try {
     const userId = Number(req.user.id);
     await Tokens.findOneAndDelete({ userId });
-    res.status(200).send({ message: "User Logged Out" });
+    return res.status(200).send({ message: "User Logged Out" });
   } catch (error) {
     logger.error(
       `[authController][logoutUser] Error in Logging out user ${error}`
     );
-    res.status(500).send({ message: "Error Occurred" });
+    return res.status(500).send({ message: "Error Occurred" });
   }
 };
 

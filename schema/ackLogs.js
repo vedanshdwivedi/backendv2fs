@@ -3,7 +3,7 @@ const { mongoDb } = require("../database/mongo");
 
 const ackLogsSchema = new mongoose.Schema(
   {
-    userId: String,
+    userId: Number,
     projectId: Number,
     agentId: String,
     action: String,
