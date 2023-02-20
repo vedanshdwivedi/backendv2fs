@@ -51,7 +51,7 @@ const create = async (data) => {
 const get = async (projectId) => {
   return await Comment.findAll({
     where: { pid: projectId },
-    order: [["createdAt", "DESC"]],
+    order: [["createdAt", "ASC"]],
   });
 };
 

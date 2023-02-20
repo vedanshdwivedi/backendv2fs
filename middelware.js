@@ -7,7 +7,12 @@ const { Tokens } = require("./schema/tokens");
 
 const validateJWT = async (req, res, next) => {
   try {
-    const token = req.header("Authorization").replace("Bearer ", "");
+    let token;
+    try {
+      token = req.header("Authorization").replace("Bearer ", "");
+    } catch (error) {
+      throw new Error("Unauthorised");
+    }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
