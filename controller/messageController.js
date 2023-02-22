@@ -8,7 +8,11 @@ const send = async (req, res) => {
       .status(201)
       .send({ message: "Message Sent Successfully", data: msg });
   } catch (error) {
-    logger.error("[messageController][send] Error in Sending Message");
+    logger.error(
+      `[messageController][send] Error in Sending Message : ${JSON.stringify(
+        error
+      )}`
+    );
     return res.status(500).send({ error: error.message });
   }
 };
@@ -22,7 +26,11 @@ const getByThreadId = async (req, res) => {
     }
     return res.status(200).send({ data: msgThread });
   } catch (error) {
-    logger.error("[messageController][getByThreadId] Error in Sending Message");
+    logger.error(
+      `[messageController][getByThreadId] Error in Sending Message : ${JSON.stringify(
+        error
+      )}`
+    );
     return res.status(500).send({ error: error.message });
   }
 };

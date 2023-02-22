@@ -133,6 +133,7 @@ const updateProject = async (data) => {
   return await Project.update(filter, {
     where: { pid: projectId },
     returning: true,
+    plain: true,
   });
 };
 

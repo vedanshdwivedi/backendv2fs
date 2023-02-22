@@ -47,7 +47,9 @@ const create = async (req, res) => {
     return res.status(201).send({ message: "Comment Created", data: comment });
   } catch (error) {
     logger.error(
-      `[commentController][create] Failed to create Comment : ${error.message} `
+      `[commentController][create] Failed to create Comment : ${JSON.stringify(
+        error
+      )} `
     );
     return res.status(500).send({ message: error.message });
   }

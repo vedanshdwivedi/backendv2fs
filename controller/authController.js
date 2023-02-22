@@ -115,7 +115,9 @@ const logoutUser = async (req, res) => {
     return res.status(200).send({ message: "User Logged Out" });
   } catch (error) {
     logger.error(
-      `[authController][logoutUser] Error in Logging out user ${error}`
+      `[authController][logoutUser] Error in Logging out user ${JSON.stringify(
+        error
+      )}`
     );
     return res.status(500).send({ message: "Error Occurred" });
   }

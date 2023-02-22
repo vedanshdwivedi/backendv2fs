@@ -65,7 +65,7 @@ const createFileEntry = async (data) => {
   if (error) {
     throw new Error();
   }
-  await new File({ ...data }).save();
+  return await new File({ ...data }).save();
 };
 
 const getAllFilesByProjectId = async (projectId) => {
@@ -82,11 +82,16 @@ const markFilesDeleted = async (projectId) => {
 };
 
 const getFileByProjectIdAndCategory = async (projectId, category) => {
-  return await File.findAll({ pid: projectId, category: category });
+  const deleted = false;
+  return await File.findAll({
+    pid: projectId,
+    category: category,
+    deleted,
+  });
 };
 
 const deleteFileByFileId = async (fileId) => {
-  return await File.update({ deleted: tue }, { where: { fid: fileId } });
+  return await File.update({ deleted: true }, { where: { fid: fileId } });
 };
 
 module.exports = {

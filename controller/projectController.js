@@ -1,12 +1,15 @@
 const formidable = require("formidable");
-const { handleContainerCreation } = require("../model/BlobModel");
+const {
+  handleContainerCreation,
+  getContainerClient,
+  deleteFileFromBlob,
+} = require("../model/BlobModel");
 const { logger } = require("../logger");
 const { encodeObjectToUniqueString } = require("../utility/encoder");
 const ackLogsModel = require("../model/ackLogs");
-const fileModel = require("../model/File")
+const fileModel = require("../model/File");
 const projectModel = require("../model/Project");
 const projectService = require("../service/project");
-const e = require("express");
 const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
 const messageThreadModel = require("../model/messageThread");
@@ -43,7 +46,7 @@ const createProject = async (req, res) => {
       });
       const containerClient = await handleContainerCreation(containerName);
       const blobClient = containerClient.getBlockBlobClient(blobName);
-      const blobUploadResponse = blobClient.uploadFile(file.filepath);
+      await blobClient.uploadFile(file.filepath);
       let createdProject = await projectService.createProjectService({
         uid,
         title: reqData.project_name,
@@ -78,7 +81,9 @@ const createProject = async (req, res) => {
       });
     } catch (error) {
       logger.error(
-        `[projectController][createProject] Unable to upload file to Blob : ${error.message}`
+        `[projectController][createProject] Unable to upload file to Blob : ${JSON.stringify(
+          error
+        )}`
       );
       return res.status(500).send({ message: error.message });
     }
@@ -87,7 +92,10 @@ const createProject = async (req, res) => {
 
 const updateProjectDataset = async (req, res) => {
   try {
-    const projectId = req.body.projdctId;
+    const projectId = Number(req.params.projectId);
+    if (!projectId) {
+      return res.status(401).send({ message: "Project ID is required" });
+    }
     const project = await projectModel.getProjectById(projectId);
     if (!project) {
       return res.status(404).send({ message: "Project Not Found", data: null });
@@ -104,15 +112,61 @@ const updateProjectDataset = async (req, res) => {
         },
         req.user.username
       );
-      const existingFile = await 
       return res.status(401).send({ message: "Unauthorised" });
     }
+    const existingFile = await fileModel.getFileByProjectIdAndCategory(
+      projectId,
+      "DATASET"
+    );
+    if (existingFile && existingFile.length > 0) {
+      await fileModel.deleteFileByFileId(existingFile[0].fid);
+      await deleteFileFromBlob(project.container, existingFile[0].filename);
+    }
     const form = new formidable.IncomingForm();
+    let updatedFile;
+    form.parse(req, async (err, fields, files) => {
+      try {
+        const file = files.file;
+        reqData = { ...fields };
+        const extension = file.originalFilename.split(".") || [];
+        const blobName = `dataset.${extension[extension.length - 1]}`;
+        const containerName = project.container;
+        const containerClient = await getContainerClient(containerName);
+        const blobClient = containerClient.getBlockBlobClient(blobName);
+        await blobClient.uploadFile(file.filepath);
+        updatedFile = await fileModel.createFileEntry({
+          pid: projectId,
+          filename: blobName,
+          container: project.container,
+          downloadLink: blobClient.url,
+          category: "DATASET",
+          deleted: false,
+        });
+        await ackLogsModel.createAckLogs({
+          userId: req.user.id,
+          projectId: projectId,
+          agentId: null,
+          action: `${req.user.name} Updated Project Training Dataset`,
+        });
+      } catch (error) {
+        logger.error(
+          `[projectController][updateProjectDataset] Error in Saving the File : ${JSON.stringify(
+            error
+          )} `
+        );
+        throw error;
+      }
+    });
+    return res
+      .status(200)
+      .send({ message: "Training File Updated", data: updatedFile });
   } catch (error) {
     logger.error(
-      `[projectController][updateProjectDataset] Error in updating training dataset : ${error.message}`
+      `[projectController][updateProjectDataset] Error in updating training dataset : ${JSON.stringify(
+        error
+      )}`
     );
-    res.status(500).send({ message: error.message, data: error });
+    return res.status(500).send({ message: error.message, data: error });
   }
 };
 
@@ -122,7 +176,9 @@ const getProjectsByUserId = async (req, res) => {
     return res.status(200).send({ message: "", data: projects });
   } catch (error) {
     logger.error(
-      `[projectController][getProjectsByUserId] Unable to fetch projects by userID : ${error.message}`
+      `[projectController][getProjectsByUserId] Unable to fetch projects by userID : ${JSON.stringify(
+        error
+      )}`
     );
     return res.status(500).send({ message: error.message });
   }
@@ -139,7 +195,9 @@ const getProject = async (req, res) => {
     }
     return res.status(200).send({ message: "Project Found", data: project });
   } catch (error) {
-    logger.error(`[projectController][getProject] Error : ${error}`);
+    logger.error(
+      `[projectController][getProject] Error : ${JSON.stringify(error)}`
+    );
   }
 };
 
@@ -154,11 +212,15 @@ const getAllFiles = async (req, res) => {
     if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
       return res.status(401).send({ message: "Unauthorised" });
     }
-    const files = await fileModel.getAllFilesByProjectId(Number(req.query.projectId));
+    const files = await fileModel.getAllFilesByProjectId(
+      Number(req.query.projectId)
+    );
     return res.status(200).send({ message: "", data: files });
   } catch (error) {
     logger.error(
-      `[projectController][getAllFilesByProjectId] Unable to fetch projects by userID : ${error.message}`
+      `[projectController][getAllFilesByProjectId] Unable to fetch projects by userID : ${JSON.stringify(
+        error
+      )}`
     );
     return res.status(500).send({ message: error.message });
   }
@@ -202,7 +264,10 @@ const fetchProjectTrainingDatasetInfo = async (req, res) => {
       );
       return res.status(401).send({ message: "Unauthorised" });
     }
-    const fileList = await fileModel.getFileByProjectIdAndCategory(project, "DATASET");
+    const fileList = await fileModel.getFileByProjectIdAndCategory(
+      project,
+      "DATASET"
+    );
     if (!fileList || fileList.length === 0) {
       return res.status(401).send({ message: "File Not Found" });
     }
@@ -319,7 +384,7 @@ const updateProjectInfo = async (req, res) => {
     const action =
       req.user.role === "USER"
         ? `${req.user.name} updated project information`
-        : `${updateProject.developer} updated project information`;
+        : `${updatedProject.developer} updated project information`;
     await ackLogsModel.createAckLogs({
       userId: Number(req.user.id),
       projectId: Number(projectId),
@@ -328,10 +393,12 @@ const updateProjectInfo = async (req, res) => {
     });
     return res
       .status(200)
-      .send({ message: "Project Updated", data: updatedProject });
+      .send({ message: "Project Updated", data: updatedProject[1] });
   } catch (error) {
     logger.error(
-      `[projectController][updateProjectInfo] Error in Updating Project Info : ${error.message} `
+      `[projectController][updateProjectInfo] Error in Updating Project Info : ${JSON.stringify(
+        error
+      )} `
     );
     return res.status(500).send({ message: error.message });
   }

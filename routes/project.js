@@ -30,6 +30,11 @@ projectRouter.get(
 );
 
 projectRouter.post("/update", validateJWT, projectController.updateProjectInfo);
+projectRouter.post(
+  "/:projectId/update/dataset",
+  validateJWT,
+  projectController.updateProjectDataset
+);
 
 module.exports = {
   projectRouter,

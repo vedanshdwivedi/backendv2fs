@@ -8,7 +8,11 @@ const get = async (req, res) => {
       .status(200)
       .send({ message: "Algorithms Fetched", data: algorithms });
   } catch (error) {
-    logger.error(`[algorithmController][get] Error in Fetching Algorithms `);
+    logger.error(
+      `[algorithmController][get] Error in Fetching Algorithms: ${JSON.stringify(
+        error
+      )} `
+    );
     return res.status(500).send({ message: error.message });
   }
 };
@@ -22,7 +26,9 @@ const getById = async (req, res) => {
       .send({ message: "Algorithms Fetched", data: algorithms });
   } catch (error) {
     logger.error(
-      `[algorithmController][getById] Error in Fetching Algorithms `
+      `[algorithmController][getById] Error in Fetching Algorithms : ${JSON.stringify(
+        error
+      )} `
     );
     return res.status(500).send({ message: error.message });
   }
@@ -37,7 +43,9 @@ const getByCode = async (req, res) => {
       .send({ message: "Algorithms Fetched", data: algorithms });
   } catch (error) {
     logger.error(
-      `[algorithmController][getByCode] Error in Fetching Algorithms `
+      `[algorithmController][getByCode] Error in Fetching Algorithms : ${JSON.stringify(
+        error
+      )} `
     );
     return res.status(500).send({ message: error.message });
   }
