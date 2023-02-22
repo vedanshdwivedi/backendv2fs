@@ -23,6 +23,14 @@ projectRouter.get(
   projectController.getAckLogs
 );
 
+projectRouter.get(
+  "/:projectId/thread",
+  validateJWT,
+  projectController.getThreadDataByProject
+);
+
+projectRouter.post("/update", validateJWT, projectController.updateProjectInfo);
+
 module.exports = {
   projectRouter,
 };

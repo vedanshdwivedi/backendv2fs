@@ -1,25 +1,15 @@
 const formidable = require("formidable");
 const { handleContainerCreation } = require("../model/BlobModel");
-const { blobService } = require("../database/azureBlob");
 const { logger } = require("../logger");
 const { encodeObjectToUniqueString } = require("../utility/encoder");
 const ackLogsModel = require("../model/ackLogs");
-const {
-  createFileEntry,
-  getAllFilesByProjectId,
-  markFilesDeleted,
-  getFileByProjectIdAndCategory,
-} = require("../model/File");
-const {
-  getAllProjectByUserId,
-  getProjectById,
-  Project,
-} = require("../model/Project");
+const fileModel = require("../model/File")
+const projectModel = require("../model/Project");
 const projectService = require("../service/project");
-const moment = require("moment");
 const e = require("express");
 const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
+const messageThreadModel = require("../model/messageThread");
 
 const generateContainerName = ({ createdAt, email, username, uid }) => {
   const containerName = encodeObjectToUniqueString({
@@ -63,7 +53,7 @@ const createProject = async (req, res) => {
         algorithm: reqData.algorithm,
         container: containerName,
       });
-      await createFileEntry({
+      await fileModel.createFileEntry({
         pid: createdProject.pid,
         filename: blobName,
         container: containerName,
@@ -95,9 +85,40 @@ const createProject = async (req, res) => {
   });
 };
 
+const updateProjectDataset = async (req, res) => {
+  try {
+    const projectId = req.body.projdctId;
+    const project = await projectModel.getProjectById(projectId);
+    if (!project) {
+      return res.status(404).send({ message: "Project Not Found", data: null });
+    }
+    if (Number(project.uid) !== Number(req.user.id)) {
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      const existingFile = await 
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const form = new formidable.IncomingForm();
+  } catch (error) {
+    logger.error(
+      `[projectController][updateProjectDataset] Error in updating training dataset : ${error.message}`
+    );
+    res.status(500).send({ message: error.message, data: error });
+  }
+};
+
 const getProjectsByUserId = async (req, res) => {
   try {
-    const projects = await getAllProjectByUserId(req.user.id);
+    const projects = await projectModel.getAllProjectByUserId(req.user.id);
     return res.status(200).send({ message: "", data: projects });
   } catch (error) {
     logger.error(
@@ -109,7 +130,7 @@ const getProjectsByUserId = async (req, res) => {
 
 const getProject = async (req, res) => {
   try {
-    const project = await getProjectById(req.query.projectId);
+    const project = await projectModel.getProjectById(req.query.projectId);
     if (!project) {
       return res.status(404).send({ message: "Project Not Found" });
     }
@@ -124,14 +145,16 @@ const getProject = async (req, res) => {
 
 const getAllFiles = async (req, res) => {
   try {
-    const project = await getProjectById(Number(req.query.projectId));
+    const project = await projectModel.getProjectById(
+      Number(req.query.projectId)
+    );
     if (!project) {
       return res.status(404).send({ message: "Invalid Project ID" });
     }
     if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
       return res.status(401).send({ message: "Unauthorised" });
     }
-    const files = await getAllFilesByProjectId(Number(req.query.projectId));
+    const files = await fileModel.getAllFilesByProjectId(Number(req.query.projectId));
     return res.status(200).send({ message: "", data: files });
   } catch (error) {
     logger.error(
@@ -144,10 +167,10 @@ const getAllFiles = async (req, res) => {
 const deleteProject = async (req, res) => {
   try {
     const projectId = Number(req.params.projectId);
-    let project = await getProjectById(projectId);
+    let project = await projectModel.getProjectById(projectId);
     project.deleted = true;
     project.save();
-    await markFilesDeleted(projectId);
+    await fileModel.markFilesDeleted(projectId);
     return res.status(200).send({ message: "Project Deleted" });
   } catch (error) {
     logger.error(
@@ -162,7 +185,7 @@ const deleteProject = async (req, res) => {
 const fetchProjectTrainingDatasetInfo = async (req, res) => {
   try {
     const projectId = Number(req.params.projectId);
-    let project = await getProjectById(projectId);
+    let project = await projectModel.getProjectById(projectId);
     if (req.user.role === "USER" && req.user.id !== Number(project.uid)) {
       logger.info(
         `[projectController][fetchProjectTrainingDatasetInfo] Unauthorised Project Access Asked`
@@ -179,7 +202,7 @@ const fetchProjectTrainingDatasetInfo = async (req, res) => {
       );
       return res.status(401).send({ message: "Unauthorised" });
     }
-    const fileList = await getFileByProjectIdAndCategory(project, "DATASET");
+    const fileList = await fileModel.getFileByProjectIdAndCategory(project, "DATASET");
     if (!fileList || fileList.length === 0) {
       return res.status(401).send({ message: "File Not Found" });
     }
@@ -229,6 +252,91 @@ const getAckLogs = async (req, res) => {
   }
 };
 
+const getThreadDataByProject = async (req, res) => {
+  try {
+    const projectId = req.params.projectId;
+    const project = await projectModel.getProjectById(projectId);
+    if (Number(project.pid) !== Number(req.user.id)) {
+      logger.info(
+        `[projectController][getAckLogs] User does not have access to this project `
+      );
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+    }
+    let thread;
+    thread = await messageThreadModel.get(project.developer, req.user.username);
+    if (!thread) {
+      thread = await messageThreadModel.create(
+        project.developer,
+        req.user.username
+      );
+    }
+    return res
+      .status(200)
+      .send({ message: "Fetched Message Thread", data: thread });
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
+  }
+};
+
+const updateProjectInfo = async (req, res) => {
+  try {
+    const projectId = req.body.projectId;
+    const project = await projectModel.getProjectById(projectId);
+    if (!project) {
+      return res.status(404).send({ message: "Project Not Found" });
+    }
+    if (Number(project.uid) !== Number(req.user.id)) {
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const data = {
+      title: req.body.projectTitle,
+      description: req.body.projectDescription,
+      email: req.body.projectEmail,
+      pid: projectId,
+    };
+    const updatedProject = await projectModel.updateProject(data);
+    const action =
+      req.user.role === "USER"
+        ? `${req.user.name} updated project information`
+        : `${updateProject.developer} updated project information`;
+    await ackLogsModel.createAckLogs({
+      userId: Number(req.user.id),
+      projectId: Number(projectId),
+      agentId: updatedProject.developer,
+      action,
+    });
+    return res
+      .status(200)
+      .send({ message: "Project Updated", data: updatedProject });
+  } catch (error) {
+    logger.error(
+      `[projectController][updateProjectInfo] Error in Updating Project Info : ${error.message} `
+    );
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   createProject,
   getProjectsByUserId,
@@ -237,4 +345,7 @@ module.exports = {
   deleteProject,
   fetchProjectTrainingDatasetInfo,
   getAckLogs,
+  getThreadDataByProject,
+  updateProjectInfo,
+  updateProjectDataset,
 };

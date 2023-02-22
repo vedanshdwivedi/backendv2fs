@@ -84,6 +84,17 @@ const validateProject = (data) => {
   return schema.validate(data).error;
 };
 
+const validateUpdateProject = (data) => {
+  const schema = Joi.object({
+    pid: Joi.number().required(),
+    title: Joi.string(),
+    email: Joi.string(),
+    description: Joi.string(),
+  });
+
+  return schema.validate(data).error;
+};
+
 const createProjectEntry = async (data) => {
   const error = validateProject({ ...data });
   if (error) {
@@ -103,10 +114,33 @@ const getProjectById = async (projectId) => {
   return await Project.findOne({ projectId: projectId, deleted: false });
 };
 
+const updateProject = async (data) => {
+  const error = validateUpdateProject({ ...data });
+  let filter = {};
+  if (error) {
+    throw new Error(error.details[0].message);
+  }
+  if (_.get(data, "title")) {
+    filter["title"] = _.get(data, "title");
+  }
+  if (_.get(data, "email")) {
+    filter["email"] = _.get(data, "email");
+  }
+  if (_.get(data, "description")) {
+    filter["description"] = _.get(data, "description");
+  }
+  const projectId = Number(data["pid"]);
+  return await Project.update(filter, {
+    where: { pid: projectId },
+    returning: true,
+  });
+};
+
 module.exports = {
   validateProject,
   Project,
   createProjectEntry,
   getAllProjectByUserId,
   getProjectById,
+  updateProject,
 };

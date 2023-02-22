@@ -100,6 +100,8 @@ const loginUser = async (req, res) => {
       userId: Number(user.uid),
       role: user.role,
       email: user.email,
+      username: user.username,
+      name: user.name,
     });
   } catch (error) {
     return res.status(500).send({ message: error.message });

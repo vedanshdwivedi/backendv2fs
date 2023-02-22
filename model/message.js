@@ -8,8 +8,8 @@ async function get(threadId) {
 const validateMessage = (data) => {
   const schema = Joi.object({
     projectId: Joi.string().required(),
-    sender: Joi.number().required(),
-    receiver: Joi.number().required(),
+    sender: Joi.string().required(),
+    receiver: Joi.string().required(),
     content: Joi.string().required(),
     threadId: Joi.number().required(),
   });

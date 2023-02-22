@@ -4,6 +4,7 @@ const { getTokenEntry } = require("./model/tokens");
 const { user } = require("pg/lib/defaults");
 const { TokenCredential } = require("azure-storage");
 const { Tokens } = require("./schema/tokens");
+const _ = require("lodash");
 
 const validateJWT = async (req, res, next) => {
   try {

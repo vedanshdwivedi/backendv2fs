@@ -17,7 +17,10 @@ const getByThreadId = async (req, res) => {
   try {
     const threadId = req.params.threadId;
     const msgThread = await messageService.fetchMessageByThreadId(threadId);
-    res.status(200).send({ data: msgThread });
+    if (!msgThread) {
+      return res.status(404).send({ message: "Not Found", data: [] });
+    }
+    return res.status(200).send({ data: msgThread });
   } catch (error) {
     logger.error("[messageController][getByThreadId] Error in Sending Message");
     return res.status(500).send({ error: error.message });

@@ -3,8 +3,8 @@ const { mongoDb } = require("../database/mongo");
 
 const messageThreadSchema = new mongoose.Schema(
   {
-    sender: { type: Number, required: true },
-    receiver: { type: Number, required: true },
+    sender: { type: String, required: true },
+    receiver: { type: String, required: true },
   },
   { timestamps: true }
 );

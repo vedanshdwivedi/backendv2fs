@@ -6,8 +6,8 @@ const messageSchema = new mongoose.Schema(
     projectId: {
       type: Number,
     },
-    sender: { type: Number, required: true },
-    receiver: { type: Number, required: true },
+    sender: { type: String, required: true },
+    receiver: { type: String, required: true },
     content: { type: String, required: true },
     threadId: { type: String, required: true },
   },
