@@ -10,6 +10,8 @@ predictionRouter.get(
   validateJWT,
   predictionController.getByProjectId
 );
+predictionRouter.post("/:projectId/dataset", validateJWT, predictionController.uploadDataset)
+
 
 module.exports = {
   predictionRouter,

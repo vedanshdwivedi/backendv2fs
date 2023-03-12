@@ -1,7 +1,7 @@
 const { blobService } = require("../database/azureBlob");
 const { logger } = require("../logger");
 
-const getContainerClient = async (containerName) => {
+const getContainerClient = (containerName) => {
   const containerClient = blobService.getContainerClient(containerName);
   return containerClient;
 };

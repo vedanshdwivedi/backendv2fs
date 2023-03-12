@@ -35,6 +35,11 @@ projectRouter.post(
   validateJWT,
   projectController.updateProjectDataset
 );
+projectRouter.get(
+  "/settings/:projectId",
+  validateJWT,
+  projectController.getProjectSettings
+);
 
 module.exports = {
   projectRouter,

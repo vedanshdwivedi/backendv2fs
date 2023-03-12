@@ -10,6 +10,7 @@ const { projectRouter } = require("./routes/project");
 const { commentRouter } = require("./routes/comment");
 const { messageRouter } = require("./routes/message");
 const { algorithmRouter } = require("./routes/algorithm");
+const { predictionRouter } = require("./routes/prediction");
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use("/api/project", projectRouter);
 app.use("/api/comment", commentRouter);
 app.use("/api/message", messageRouter);
 app.use("/api/algorithm", algorithmRouter);
+app.use("/api/prediction", predictionRouter);
 
 app.get("/", (req, res) => {
   res.send("App Started");

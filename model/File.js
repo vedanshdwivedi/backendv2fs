@@ -39,6 +39,10 @@ const File = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+    parentFileId: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
   },
   {
     updatedAt: false,

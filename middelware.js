@@ -12,7 +12,7 @@ const validateJWT = async (req, res, next) => {
     try {
       token = req.header("Authorization").replace("Bearer ", "");
     } catch (error) {
-      throw new Error("Unauthorised");
+      return res.status(401).json({ message: "Unauthorised" });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

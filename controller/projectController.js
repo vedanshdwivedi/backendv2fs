@@ -9,6 +9,7 @@ const { encodeObjectToUniqueString } = require("../utility/encoder");
 const ackLogsModel = require("../model/ackLogs");
 const fileModel = require("../model/File");
 const projectModel = require("../model/Project");
+const settingsModel = require("../model/Settings");
 const projectService = require("../service/project");
 const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
@@ -56,6 +57,7 @@ const createProject = async (req, res) => {
         algorithm: reqData.algorithm,
         container: containerName,
       });
+      await settingsModel.init(Number(createProject.pid), reqData.algorithm);
       await fileModel.createFileEntry({
         pid: createdProject.pid,
         filename: blobName,
@@ -404,6 +406,41 @@ const updateProjectInfo = async (req, res) => {
   }
 };
 
+const getProjectSettings = async (req, res) => {
+  try {
+    const projectId = Number(req.params.projectId);
+    const projectOwner = await projectService.doesUserOwnsProject(
+      projectId,
+      Number(req.user.id)
+    );
+    if (!projectOwner) {
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const settings = await settingsModel.get(projectId);
+    return res
+      .status(200)
+      .send({ message: "Settings Fetched Successfully", data: settings });
+  } catch (error) {
+    logger.error(
+      `[projectController][updateProjectInfo] Error in Updating Project Info : ${JSON.stringify(
+        error
+      )} `
+    );
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   createProject,
   getProjectsByUserId,
@@ -415,4 +452,5 @@ module.exports = {
   getThreadDataByProject,
   updateProjectInfo,
   updateProjectDataset,
+  getProjectSettings,
 };

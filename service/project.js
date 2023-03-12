@@ -25,7 +25,7 @@ const createProjectService = async ({
 const doesUserOwnsProject = async (projectId, userId) => {
   const project = await projectModel.getProjectById(projectId);
   if (!project) {
-    return new Error("Project Not Found");
+    throw new Error("Project Not Found");
   }
   return Number(project.uid) === Number(userId);
 };
