@@ -8,6 +8,8 @@ const projectModel = require("../model/Project");
 const blobModel = require("../model/BlobModel");
 const fileModel = require("../model/File");
 const celeryUtils = require("../utility/celery");
+const taskModel = require("../model/task");
+const { trackMixPanelEvent } = require("../segment");
 
 const create = async (req, res) => {
   try {
@@ -177,8 +179,67 @@ const uploadDataset = async (req, res) => {
   }
 };
 
+const retrigger = async (req, res) => {
+  try {
+    const projectId = Number(req.body.projectId);
+    const taskId = Number(req.body.taskId);
+    if (!taskId || !projectId) {
+      throw new Error("Project Id and Task Id are required");
+    }
+    const projectOwner = await projectService.doesUserOwnsProject(
+      projectId,
+      req.user.id
+    );
+    if (!projectOwner) {
+      logger.info(
+        `[commentController][create] User Does Not have access to this project `
+      );
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const task = await taskModel.getByTaskId(taskId);
+    if (!task) {
+      return res.status(404).send({ message: "Task not found" });
+    }
+    await celeryUtils.triggerCeleryTask(
+      projectId,
+      req.user.id,
+      "QUEUED",
+      task.type,
+      task.url,
+      JSON.parse(task.payload)
+    );
+    await ackLogModel.createAckLogs({
+      userId: req.user.id,
+      projectId,
+      agentId: null,
+      action: `${req.user.name} Re-Triggered Task ${taskId}`,
+    });
+    trackMixPanelEvent("retrigger-celery-task", {}, req.user.email);
+    return res.status(200).send({ message: "Task Retriggered Successfully" });
+  } catch (error) {
+    logger.error(
+      `[predictionController][retrigger] Error in Uploading Prediction Dataset : ${JSON.stringify(
+        error
+      )} `
+    );
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   create,
   getByProjectId,
   uploadDataset,
+  retrigger,
 };

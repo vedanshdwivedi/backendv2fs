@@ -203,6 +203,34 @@ const getProject = async (req, res) => {
   }
 };
 
+const getProjectByDevAndStatus = async (req, res) => {
+  try {
+    const projectStatus = req.body.status;
+    const developer = req.body.developer;
+    let projectList;
+    if (projectStatus === "all") {
+      projectList = await projectModel.getAllProjectsByDeveloper(developer);
+    } else {
+      projectList = await projectModel.getProjectsByDevAndStatus(
+        developer,
+        projectStatus
+      );
+    }
+    return res
+      .status(200)
+      .send({
+        message: "Projects Fetched Successfully",
+        projects: projectList,
+      });
+  } catch (error) {
+    logger.error(
+      `[projectController][getProjectByDevAndStatus] Error : ${JSON.stringify(
+        error
+      )}`
+    );
+  }
+};
+
 const getAllFiles = async (req, res) => {
   try {
     const project = await projectModel.getProjectById(
@@ -453,4 +481,5 @@ module.exports = {
   updateProjectInfo,
   updateProjectDataset,
   getProjectSettings,
+  getProjectByDevAndStatus,
 };

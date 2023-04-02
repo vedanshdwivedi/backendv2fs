@@ -6,6 +6,11 @@ const projectRouter = Router();
 
 projectRouter.post("/", validateJWT, projectController.createProject);
 projectRouter.get("/files", validateJWT, projectController.getAllFiles);
+projectRouter.post(
+  "/dev/projectList",
+  validateJWT,
+  projectController.getProjectByDevAndStatus
+);
 projectRouter.get("/", validateJWT, projectController.getProjectsByUserId);
 projectRouter.delete(
   "/:projectId",

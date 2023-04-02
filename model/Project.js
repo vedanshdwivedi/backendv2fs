@@ -110,6 +110,18 @@ const getAllProjectByUserId = async (userId) => {
   });
 };
 
+const getAllProjectsByDeveloper = async (dev) => {
+  return await Project.findAll({
+    where: { developer: dev },
+  });
+};
+
+const getProjectsByDevAndStatus = async (dev, projectStatus) => {
+  return await Project.findAll({
+    where: { developer: dev, status: projectStatus },
+  });
+};
+
 const getProjectById = async (projectId) => {
   return await Project.findOne({ projectId: projectId, deleted: false });
 };
@@ -139,6 +151,8 @@ const updateProject = async (data) => {
 
 module.exports = {
   validateProject,
+  getProjectsByDevAndStatus,
+  getAllProjectsByDeveloper,
   Project,
   createProjectEntry,
   getAllProjectByUserId,

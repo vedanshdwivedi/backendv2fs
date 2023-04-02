@@ -1,4 +1,5 @@
 const taskModel = require("../model/task");
+const fileModel = require("../model/File");
 const projectService = require("../service/project");
 
 const getTasksByProjectId = async (req, res) => {
@@ -22,10 +23,26 @@ const getTasksByProjectId = async (req, res) => {
       );
       return res.status(401).send({ message: "Unauthorised" });
     }
+    const files = await fileModel.getAllFilesByProjectId(projectId);
+    let fileMap = {};
+    files.forEach((obj) => {
+      if (obj.parentFileId !== null) {
+        fileMap[obj.parentFileId] = obj.downloadLink;
+      }
+    });
     const tasks = await taskModel.getByProjectId(projectId);
+    let newTaskStructure = [];
+    tasks.forEach((obj) => {
+      obj.payload = JSON.parse(obj.payload);
+      let downloadLink = null;
+      if (obj.payload.datasetId !== null) {
+        downloadLink = fileMap[obj.payload.datasetId];
+      }
+      newTaskStructure.push({ ...obj.dataValues, downloadLink: downloadLink });
+    });
     return res
       .status(200)
-      .send({ message: "Fetched Tasks Successfully", data: tasks });
+      .send({ message: "Fetched Tasks Successfully", data: newTaskStructure });
   } catch (error) {
     logger.error(
       `[taskController][getTasksByProjectId] Error in Fetching Tasks : ${JSON.stringify(
