@@ -6,6 +6,7 @@ const { getCurrentTimeStamp } = require("../utility/datetime");
 const { Tokens } = require("../schema/tokens");
 const { createTokenEntry } = require("../model/tokens");
 const { logger } = require("../logger");
+const userModel = require("../model/User");
 
 const createUniqueUsername = async (email) => {
   let tryCount = -1;
@@ -123,8 +124,40 @@ const logoutUser = async (req, res) => {
   }
 };
 
+const fetchUser = async (req, res) => {
+  try {
+    if (req.user.role != "DEVELOPER") {
+      logger.info(`[authController][fetchUser] Unauthorised User Access Asked`);
+      trackMixPanelEvent(
+        "unauthorised-user-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          email: req.user.email,
+        },
+        req.user.username
+      );
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const user = await userModel.fetchUserByUid(req.query.uid);
+    if (!user) {
+      return res.status(200).send({ data: null });
+    }
+    user.password = ""
+    return res.status(200).send({ data: user });
+  } catch (error) {
+    logger.error(
+      `[authController][fetchUser] Error in Fetching user ${JSON.stringify(
+        error
+      )}`
+    );
+    return res.status(500).send({ message: "Error Occurred" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   logoutUser,
+  fetchUser,
 };

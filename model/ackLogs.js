@@ -32,7 +32,10 @@ async function createAckLogs({ userId, projectId, agentId, action }) {
 }
 
 async function getAckLogs(projectId) {
-  return await AckLogs.find({ projectId });
+  return await AckLogs.find({
+    where: { projectId },
+    order: [["createdAt", "DESC"]],
+  });
 }
 
 module.exports = {

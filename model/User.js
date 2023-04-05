@@ -7,7 +7,6 @@ const joi = require("joi");
 const Joi = require("joi");
 const passwordComplexity = require("joi-password-complexity");
 
-
 const User = sequelize.define("users", {
   uid: {
     type: DataTypes.INTEGER,
@@ -91,8 +90,13 @@ const validateUser = (data) => {
   return schema.validate(data).error;
 };
 
+const fetchUserByUid = async (uid) => {
+  return await User.findOne({ uid });
+};
+
 module.exports = {
   generateAuthToken,
   validateUser,
   User,
+  fetchUserByUid
 };

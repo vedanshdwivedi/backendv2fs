@@ -22,7 +22,10 @@ const createProjectService = async ({
   return project;
 };
 
-const doesUserOwnsProject = async (projectId, userId) => {
+const doesUserOwnsProject = async (projectId, userId, role = "USER") => {
+  if (role === "DEVELOPER") {
+    return true;
+  }
   const project = await projectModel.getProjectById(projectId);
   if (!project) {
     throw new Error("Project Not Found");

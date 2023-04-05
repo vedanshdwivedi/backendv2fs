@@ -14,6 +14,7 @@ const projectService = require("../service/project");
 const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
 const messageThreadModel = require("../model/messageThread");
+const userModel = require("../model/User");
 
 const generateContainerName = ({ createdAt, email, username, uid }) => {
   const containerName = encodeObjectToUniqueString({
@@ -216,12 +217,10 @@ const getProjectByDevAndStatus = async (req, res) => {
         projectStatus
       );
     }
-    return res
-      .status(200)
-      .send({
-        message: "Projects Fetched Successfully",
-        projects: projectList,
-      });
+    return res.status(200).send({
+      message: "Projects Fetched Successfully",
+      projects: projectList,
+    });
   } catch (error) {
     logger.error(
       `[projectController][getProjectByDevAndStatus] Error : ${JSON.stringify(
@@ -315,7 +314,8 @@ const getAckLogs = async (req, res) => {
     const projectId = req.params.projectId;
     const projectOwner = projectService.doesUserOwnsProject(
       projectId,
-      req.user.id
+      req.user.id,
+      req.user.role
     );
     if (!projectOwner) {
       logger.info(
@@ -351,7 +351,10 @@ const getThreadDataByProject = async (req, res) => {
   try {
     const projectId = req.params.projectId;
     const project = await projectModel.getProjectById(projectId);
-    if (Number(project.pid) !== Number(req.user.id)) {
+    if (
+      Number(project.uid) !== Number(req.user.id) &&
+      req.user.role !== "DEVELOPER"
+    ) {
       logger.info(
         `[projectController][getAckLogs] User does not have access to this project `
       );
@@ -366,14 +369,26 @@ const getThreadDataByProject = async (req, res) => {
         },
         req.user.username
       );
+      return res.status(404).send({ data: "Unauthorised Access" });
     }
     let thread;
-    thread = await messageThreadModel.get(project.developer, req.user.username);
+    let sender;
+    let receiver;
+    if (req.user.role === "USER") {
+      sender = project.developer;
+      receiver = req.user.username;
+    } else {
+      // For Developers
+      sender = req.user.username;
+      const projectOwner = await userModel.fetchUserByUid(project.uid);
+      if (!projectOwner) {
+        return res.status(404).send({ data: "Project Owner not found" });
+      }
+      receiver = projectOwner.username;
+    }
+    thread = await messageThreadModel.get(sender, receiver);
     if (!thread) {
-      thread = await messageThreadModel.create(
-        project.developer,
-        req.user.username
-      );
+      thread = await messageThreadModel.create(sender, receiver);
     }
     return res
       .status(200)
@@ -439,7 +454,8 @@ const getProjectSettings = async (req, res) => {
     const projectId = Number(req.params.projectId);
     const projectOwner = await projectService.doesUserOwnsProject(
       projectId,
-      Number(req.user.id)
+      Number(req.user.id),
+      req.user.role
     );
     if (!projectOwner) {
       trackMixPanelEvent(

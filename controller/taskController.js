@@ -7,7 +7,8 @@ const getTasksByProjectId = async (req, res) => {
     const projectId = req.params.projectId;
     const isOwner = await projectService.doesUserOwnsProject(
       projectId,
-      Number(req.user.id)
+      Number(req.user.id),
+      req.user.role
     );
     if (!isOwner) {
       trackMixPanelEvent(

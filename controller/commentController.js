@@ -14,7 +14,8 @@ const create = async (req, res) => {
     const projectId = req.body.pid;
     const projectOwner = await projectService.doesUserOwnsProject(
       projectId,
-      req.user.id
+      req.user.id,
+      req.user.role
     );
     if (!projectOwner) {
       logger.info(
@@ -60,7 +61,8 @@ const get = async (req, res) => {
     const projectId = req.params.projectId;
     const projectOwner = await projectService.doesUserOwnsProject(
       projectId,
-      req.user.id
+      req.user.id,
+      req.user.role
     );
     if (!projectOwner) {
       logger.info(

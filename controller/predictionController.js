@@ -19,7 +19,8 @@ const create = async (req, res) => {
     }
     const projectOwner = await projectService.doesUserOwnsProject(
       Number(projectId),
-      Number(req.user.id)
+      Number(req.user.id),
+      req.user.role
     );
     if (!projectOwner) {
       trackMixPanelEvent(
@@ -66,7 +67,8 @@ const getByProjectId = async (req, res) => {
     }
     const checkOwner = await projectService.doesUserOwnsProject(
       Number(projectId),
-      Number(req.user.id)
+      Number(req.user.id),
+      req.user.role
     );
     if (!checkOwner) {
       trackMixPanelEvent(
@@ -188,7 +190,8 @@ const retrigger = async (req, res) => {
     }
     const projectOwner = await projectService.doesUserOwnsProject(
       projectId,
-      req.user.id
+      req.user.id,
+      req.user.role
     );
     if (!projectOwner) {
       logger.info(
