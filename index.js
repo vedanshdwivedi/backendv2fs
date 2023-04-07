@@ -3,7 +3,10 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const socketio = require("socket.io");
+const http = require("http");
 const { trackMixPanelEvent } = require("./segment");
+const eventEmitter = require("events");
 const { logger } = require("./logger");
 const { authRouter } = require("./routes/auth");
 const { projectRouter } = require("./routes/project");
@@ -12,6 +15,7 @@ const { messageRouter } = require("./routes/message");
 const { algorithmRouter } = require("./routes/algorithm");
 const { predictionRouter } = require("./routes/prediction");
 const { taskRouter } = require("./routes/tasks");
+const messageService = require("./service/message");
 
 const app = express();
 
@@ -36,9 +40,25 @@ app.get("/", (req, res) => {
   res.send("App Started");
 });
 
+const server = http.createServer(app);
+const io = socketio(server, { cors: { origin: "*" } });
+
 const PORT = 5500;
-app.listen(PORT, () => {
-  // connect();
-  // trackMixPanelEvent("Backend-Start", { url: "/" });
+server.listen(PORT, () => {
   logger.info(`Listening on PORT : ${PORT}`);
+});
+
+io.on("connection", (socket) => {
+  const threadId = socket.handshake.query.threadId;
+
+  if (!threadId) {
+    return;
+  }
+
+  socket.join(threadId);
+
+  socket.on("send message", async (data) => {
+    const savedMessage = await messageService.saveMessage(data);
+    io.to(threadId).emit("new message", savedMessage);
+  });
 });

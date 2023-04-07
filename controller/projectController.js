@@ -386,9 +386,13 @@ const getThreadDataByProject = async (req, res) => {
       }
       receiver = projectOwner.username;
     }
-    thread = await messageThreadModel.get(sender, receiver);
+    thread = await messageThreadModel.get(Number(projectId), sender, receiver);
     if (!thread) {
-      thread = await messageThreadModel.create(sender, receiver);
+      thread = await messageThreadModel.create(
+        sender,
+        receiver,
+        Number(projectId)
+      );
     }
     return res
       .status(200)

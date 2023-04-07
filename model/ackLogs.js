@@ -34,8 +34,7 @@ async function createAckLogs({ userId, projectId, agentId, action }) {
 async function getAckLogs(projectId) {
   return await AckLogs.find({
     where: { projectId },
-    order: [["createdAt", "DESC"]],
-  });
+  }).sort({ createdAt: -1 });
 }
 
 module.exports = {
