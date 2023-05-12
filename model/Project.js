@@ -48,10 +48,6 @@ const Project = sequelize.define("projects", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  expert: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
   algorithm: {
     type: DataTypes.STRING,
     allowNull: false,

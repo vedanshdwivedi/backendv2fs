@@ -47,6 +47,11 @@ projectRouter.get(
   projectController.getProjectSettings
 );
 
+projectRouter.get(
+  "/agentAvailability/:algorithm",
+  projectController.getAvailableAgents
+);
+
 projectRouter.get("/nextState/:state", (req, res) => {
   try {
     const currentState = req.params.state;
@@ -61,6 +66,12 @@ projectRouter.get("/nextState/:state", (req, res) => {
     return res.status(401).send({ message: error.message });
   }
 });
+
+projectRouter.post(
+  "/status",
+  validateJWT,
+  projectController.updateProjectStatus
+);
 
 module.exports = {
   projectRouter,

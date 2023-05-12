@@ -94,9 +94,14 @@ const fetchUserByUid = async (uid) => {
   return await User.findOne({ uid });
 };
 
+const fetchUserByDeveloper = async (username) => {
+  return await User.findOne({ developer: username });
+};
+
 module.exports = {
   generateAuthToken,
   validateUser,
   User,
-  fetchUserByUid
+  fetchUserByUid,
+  fetchUserByDeveloper,
 };

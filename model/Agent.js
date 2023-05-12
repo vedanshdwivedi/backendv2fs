@@ -1,7 +1,8 @@
 const { sequelize } = require("../database/postgres");
-const { DataTypes } = require("sequelize");
+const { DataTypes, Op } = require("sequelize");
 const User = require("./User");
 const { getCurrentTimeStamp } = require("../utility/datetime");
+const { logger } = require("../logger");
 
 const Agent = sequelize.define("agents", {
   aid: {
@@ -16,29 +17,25 @@ const Agent = sequelize.define("agents", {
       key: "uid",
     },
   },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  email: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  contact: {
-    type: DataTypes.STRING,
-  },
-  deleted: {
+  blocked: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
-  verified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+  maxConcurrency: {
+    type: DataTypes.BIGINT,
+    defaultValue: 50,
+  },
+  currentConcurrency: {
+    type: DataTypes.BIGINT,
+    defaultValue: 0,
+  },
+  totalProjects: {
+    type: DataTypes.BIGINT,
+    defaultValue: 0,
+  },
+  algorithm: {
+    type: DataTypes.STRING,
+    allowNull: false,
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -48,23 +45,42 @@ const Agent = sequelize.define("agents", {
     type: DataTypes.DATE,
     defaultValue: getCurrentTimeStamp(),
   },
-  role: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  profilePic: {
-    type: DataTypes.STRING,
-  },
-  username: {
-    type: DataTypes.STRING,
-    unique: true,
-  },
 });
-
-User.hasOne(Agent);
 
 sequelize.sync({ force: false }).then(() => {
   logger.info(`Agents Table created!`);
 });
 
-module.exports = Agent;
+const getAvailableAgentsByAlgorithm = async (algorithm) => {
+  return Agent.findAll({
+    where: {
+      blocked: false,
+      algorithm: algorithm,
+      [Op.and]: {
+        maxConcurrency: {
+          [Op.gt]: sequelize.col("currentConcurrency"),
+        },
+      },
+    },
+    order: [
+      ["currentConcurrency", "ASC"],
+      ["updatedAt", "ASC"],
+    ],
+  });
+};
+
+const updateCurrentConcurrency = async (agentUid, increment) => {
+  const agent = await Agent.findOne({ uid: agentUid });
+  if (!agent) {
+    logger.info(`[agentModel][updateCurrentConcurrency] No Agent Found`);
+  }
+  return await agent.update({
+    currentConcurrency: agent.currentConcurrency + increment,
+  });
+};
+
+module.exports = {
+  Agent,
+  getAvailableAgentsByAlgorithm,
+  updateCurrentConcurrency,
+};

@@ -15,6 +15,7 @@ const { trackMixPanelEvent } = require("../segment");
 const { getCurrentTimeStamp } = require("../utility/datetime");
 const messageThreadModel = require("../model/messageThread");
 const userModel = require("../model/User");
+const assignmentService = require("../service/assignment");
 
 const generateContainerName = ({ createdAt, email, username, uid }) => {
   const containerName = encodeObjectToUniqueString({
@@ -58,6 +59,7 @@ const createProject = async (req, res) => {
         algorithm: reqData.algorithm,
         container: containerName,
       });
+      await assignmentService.assignAgentToProject(createProject);
       await settingsModel.init(Number(createProject.pid), reqData.algorithm);
       await fileModel.createFileEntry({
         pid: createdProject.pid,
@@ -453,6 +455,55 @@ const updateProjectInfo = async (req, res) => {
   }
 };
 
+const updateProjectStatus = async (req, res) => {
+  try {
+    const projectId = req.body.projectId;
+    const project = await projectModel.getProjectById(projectId);
+    if (!project) {
+      return res.status(404).send({ message: "Project Not Found" });
+    }
+    if (req.user.role !== "DEVELOPER") {
+      trackMixPanelEvent(
+        "unauthorised-project-access",
+        {
+          uid: req.user.id,
+          role: req.user.role,
+          projectId: projectId,
+          email: req.user.email,
+          url: req.originalUrl,
+        },
+        req.user.username
+      );
+      return res.status(401).send({ message: "Unauthorised" });
+    }
+    const data = {
+      status: req.body.status,
+    };
+    const action = `Project status updated from ${project.status} to ${req.body.status}`;
+    const updatedProject = await projectModel.updateProject(data);
+    await ackLogsModel.createAckLogs({
+      userId: Number(req.user.id),
+      projectId: Number(projectId),
+      agentId: updatedProject.developer,
+      action,
+    });
+    if (req.body.status === "COMPLETED") {
+      await assignmentService.releaseDevFromProject(project.developer);
+    }
+    return res.status(200).send({
+      message: "Project Status Updated successfully",
+      data: updatedProject,
+    });
+  } catch (error) {
+    logger.error(
+      `[projectController][updateProjectStatus] Error in updating project state : ${JSON.stringify(
+        error
+      )} `
+    );
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 const getProjectSettings = async (req, res) => {
   try {
     const projectId = Number(req.params.projectId);
@@ -489,6 +540,21 @@ const getProjectSettings = async (req, res) => {
   }
 };
 
+const getAvailableAgents = async (req, res) => {
+  try {
+    const algorithm = req.params.algorithm;
+    const agents = await assignmentService.fetchAvailableAgent(algorithm);
+    return res.status(200).send({ message: "Available Agents", data: agents });
+  } catch (error) {
+    logger.error(
+      `[projectController][getAvailableAgents] Error in fetching available agents : ${JSON.stringify(
+        error
+      )} `
+    );
+    return res.status(500).send({ message: error.message });
+  }
+};
+
 module.exports = {
   createProject,
   getProjectsByUserId,
@@ -502,4 +568,6 @@ module.exports = {
   updateProjectDataset,
   getProjectSettings,
   getProjectByDevAndStatus,
+  getAvailableAgents,
+  updateProjectStatus,
 };
