@@ -62,5 +62,3 @@ io.on("connection", (socket) => {
     io.to(threadId).emit("new message", savedMessage);
   });
 });
-
-module.exports = { app };
