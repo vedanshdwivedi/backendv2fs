@@ -4,16 +4,6 @@ const fs = require("fs");
 const transport = pino.transport({
   targets: [
     {
-      level: "info",
-      target: "pino/file",
-      options: {
-        colorize: true,
-        translateTime: "UTC:dd-mm-yyyy HH:MM:ss",
-        ignore: "pid,hostname",
-        destination: "./info_logs.log"
-      },
-    },
-    {
       level: "trace",
       target: "pino/file",
       options: {
