@@ -16,8 +16,20 @@ const { algorithmRouter } = require("./routes/algorithm");
 const { predictionRouter } = require("./routes/prediction");
 const { taskRouter } = require("./routes/tasks");
 const messageService = require("./service/message");
-
+const { default: pino } = require("pino");
+ 
 const app = express();
+ 
+const apiLogger = pino();
+
+app.use((req, res, next) => {
+  apiLogger.info({
+    method: req.method,
+    url: req.originalUrl,
+  });
+
+  next();
+});
 
 dotenv.config();
 mongoose.set("strictQuery", true);
