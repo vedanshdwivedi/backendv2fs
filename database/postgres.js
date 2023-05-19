@@ -27,7 +27,14 @@ client
     });
   });
 
-const sequelize = new Sequelize(process.env.POSTGRES_URI);
+// const sequelize = new Sequelize(process.env.POSTGRES_URI);
+const sequelize = new Sequelize(process.env.POSTGRES_URI, {
+  logging: (log) => {
+    if (log.includes('error')) {
+      console.error(log); // Display the error logs
+    }
+  },
+});
 
 module.exports = {
   // client,
