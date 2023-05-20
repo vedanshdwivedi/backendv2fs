@@ -8,7 +8,7 @@ const get = async (projectId, sender, receiver) => {
   return await MessageThread.findOne({
     sender: { $in: [sender, receiver] },
     receiver: { $in: [sender, receiver] },
-    projectI: projectId,
+    projectId: projectId,
   });
 };
 
