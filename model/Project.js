@@ -86,7 +86,7 @@ const validateUpdateProject = (data) => {
     title: Joi.string(),
     email: Joi.string(),
     description: Joi.string(),
-  });
+  }).unknown();
 
   return schema.validate(data).error;
 };
@@ -123,7 +123,7 @@ const getProjectById = async (projectId) => {
 };
 
 const updateProject = async (data) => {
-  const error = validateUpdateProject({ ...data });
+  const error = validateUpdateProject({ ...data.dataValues })
   let filter = {};
   if (error) {
     throw new Error(error.details[0].message);
