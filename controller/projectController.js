@@ -59,8 +59,8 @@ const createProject = async (req, res) => {
         algorithm: reqData.algorithm,
         container: containerName,
       });
-      await assignmentService.assignAgentToProject(createProject);
-      await settingsModel.init(Number(createProject.pid), reqData.algorithm);
+      await assignmentService.assignAgentToProject(createdProject);
+      await settingsModel.init(Number(createdProject.pid), reqData.algorithm);
       await fileModel.createFileEntry({
         pid: createdProject.pid,
         filename: blobName,
