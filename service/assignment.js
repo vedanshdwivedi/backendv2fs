@@ -41,6 +41,8 @@ const assignAgentToProject = async (project) => {
         agentId: null,
         action: "No agents available for assignment",
       });
+      
+      return null;
     }
     const assignedAgent = availableAgents[0];
     const agentProfile = await userModel.fetchUserByUid(assignedAgent.uid);
