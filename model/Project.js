@@ -137,6 +137,12 @@ const updateProject = async (data) => {
   if (_.get(data, "description")) {
     filter["description"] = _.get(data, "description");
   }
+  if (_.get(data, "developer")) {
+    filter["developer"] = _.get(data, "developer");
+  }
+  if (_.get(data, "status")) {
+    filter["status"] = _.get(data, "status");
+  }
   const projectId = Number(data["pid"]);
   return await Project.update(filter, {
     where: { pid: projectId },
